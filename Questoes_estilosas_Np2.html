@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treinamento NP2 - Direito das Obrigações</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #8e44ad;
+            --bg-color: #f4f6f7;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --success: #27ae60;
+            --success-bg: #eafaf1;
+            --danger: #c0392b;
+            --danger-bg: #fdedec;
+            --border: #bdc3c7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            border-bottom: 5px solid var(--accent);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: #d5dbdb;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .score-panel {
+            display: flex;
+            justify-content: space-between;
+            background: var(--card-bg);
+            padding: 1.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .score-panel span.correct-count { color: var(--success); }
+        .score-panel span.incorrect-count { color: var(--danger); }
+
+        .question-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            white-space: pre-wrap;
+            color: var(--primary);
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .opt-btn {
+            text-align: left;
+            padding: 1rem 1.2rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: #fdfdfd;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .opt-btn:hover:not(:disabled) {
+            background-color: #f4ecf7;
+            border-color: var(--accent);
+        }
+
+        .opt-btn:disabled {
+            cursor: default;
+        }
+
+        .opt-btn.correct {
+            background-color: var(--success-bg);
+            border-color: var(--success);
+            color: #145a32;
+            font-weight: bold;
+        }
+
+        .opt-btn.wrong {
+            background-color: var(--danger-bg);
+            border-color: var(--danger);
+            color: #78281f;
+        }
+
+        .feedback {
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            display: none;
+            padding: 1.2rem;
+            border-radius: 8px;
+            line-height: 1.5;
+            border-left: 5px solid transparent;
+        }
+        
+        .feedback.is-correct {
+            background-color: #eaeded;
+            border-color: var(--success);
+            color: #186a3b;
+        }
+
+        .feedback.is-wrong {
+            background-color: #eaeded;
+            border-color: var(--danger);
+            color: #7b241c;
+        }
+
+        .explanation {
+            margin-top: 0.8rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            font-weight: 500;
+        }
+
+        @media (max-width: 600px) {
+            .question-card { padding: 1.2rem; }
+            .score-panel { flex-direction: column; gap: 0.8rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Simulado NP2: Estilo da Professora</h1>
+        <p>Inadimplemento, Extinção, Casos Práticos e Assertivas</p>
+    </header>
+
+    <main>
+        <div class="score-panel">
+            <span>Questões: <span id="total-q">30</span></span>
+            <span class="correct-count">Acertos: <span id="score-correct">0</span></span>
+            <span class="incorrect-count">Erros: <span id="score-wrong">0</span></span>
+        </div>
+
+        <div id="quiz-container"></div>
+    </main>
+
+    <script>
+        const quizData = [
+            {
+                q: "1. Tony Stark devia R$ 500.000,00 a Bruce Wayne. Na data do vencimento, sem dinheiro em caixa, Tony oferece uma armadura Mark IV avaliada no mesmo valor. Bruce Wayne concorda expressamente em receber a armadura para quitar a dívida. Nessa situação hipotética, nos termos do Código Civil, houve:",
+                opt: [
+                    "a) Novação objetiva.",
+                    "b) Imputação do pagamento.",
+                    "c) Dação em pagamento.",
+                    "d) Compensação legal."
+                ],
+                ans: 2,
+                reason: "Art. 356, CC. A Dação em Pagamento ocorre quando o credor consente em receber prestação diversa da que lhe é devida (entrega de objeto no lugar de dinheiro)."
+            },
+            {
+                q: "2. Sobre a mora e o inadimplemento absoluto das obrigações, analise as assertivas e assinale a alternativa que contém apenas as afirmações corretas.\n1. Ocorre a mora quando o devedor não cumpre a obrigação no tempo estipulado, mas o cumprimento ainda é útil e possível ao credor.\n2. O inadimplemento absoluto ocorre quando a prestação, por causa do atraso, torna-se inútil ao credor, cabendo perdas e danos.\n3. Em obrigações puramente pecuniárias (pagamento em dinheiro), ocorre frequentemente o inadimplemento absoluto por impossibilidade financeira.",
+                opt: [
+                    "a) Apenas 1 e 2.",
+                    "b) Apenas 2 e 3.",
+                    "c) Apenas 1 e 3.",
+                    "d) 1, 2 e 3."
+                ],
+                ans: 0,
+                reason: "A assertiva 3 é FALSA. Conforme destacado pela sua professora, \"não há inadimplemento absoluto em obrigação pecuniária\", pois o dinheiro nunca perde sua utilidade de troca, configurando sempre mora (atraso)."
+            },
+            {
+                q: "3. Tyrion Lannister deve R$ 1 milhão ao seu pai, Tywin. Após o falecimento de Tywin, Tyrion torna-se seu único herdeiro, herdando todo o patrimônio e os créditos do pai. Segundo o Código Civil, o que ocorre com a dívida de Tyrion?",
+                opt: [
+                    "a) Fica extinta pelo instituto da remissão (perdão) tácita.",
+                    "b) Fica extinta pelo instituto da confusão.",
+                    "c) Transforma-se em obrigação natural, inexigível judicialmente.",
+                    "d) Deve ser depositada em juízo por consignação em pagamento."
+                ],
+                ans: 1,
+                reason: "Art. 381, CC. Ocorre a Confusão quando na mesma pessoa se reúnem as qualidades de credor e devedor, extinguindo a obrigação."
+            },
+            {
+                q: "4. Luke, Leia e Han contraíram uma dívida solidária (passiva) de R$ 90.000,00 com o credor Jabba. Jabba decide perdoar a dívida expressamente apenas em relação a Han. Nessa situação:",
+                opt: [
+                    "a) A dívida é extinta para todos, pois na solidariedade o perdão a um aproveita os demais.",
+                    "b) A remissão é nula se não for aceita por todos os codevedores.",
+                    "c) Luke e Leia continuam devedores, mas o credor deverá abater a cota de Han (R$ 30 mil), cobrando apenas R$ 60 mil.",
+                    "d) Luke e Leia continuam devedores solidários pela integralidade dos R$ 90.000,00."
+                ],
+                ans: 2,
+                reason: "Art. 277, CC. O perdão (remissão) concedido a um dos codevedores solidários não extingue a dívida para os demais, mas o credor só pode cobrar deles descontando a cota do devedor perdoado."
+            },
+            {
+                q: "5. Assinale a alternativa INCORRETA sobre o instituto da Cláusula Penal:",
+                opt: [
+                    "a) O valor da cominação imposta na cláusula penal não pode exceder o da obrigação principal.",
+                    "b) Para exigir a pena convencional, é necessário que o credor prove ter sofrido o prejuízo alegado.",
+                    "c) A penalidade deve ser reduzida equitativamente pelo juiz se a obrigação principal tiver sido cumprida em parte.",
+                    "d) A cláusula penal pode ser estipulada conjuntamente com a obrigação principal ou em ato posterior."
+                ],
+                ans: 1,
+                reason: "A alternativa 'b' está INCORRETA (Art. 416, CC). Para exigir a pena convencional (cláusula penal), NÃO é necessário que o credor alegue ou prove prejuízo, ela funciona justamente como prefixação das perdas e danos."
+            },
+            {
+                q: "6. Hermione, pessoa obrigada a pagar 3 débitos (mensalidades de livros A, B e C), todos da mesma natureza, líquidos, vencidos e no valor de R$ 100,00 cada, ao credor Rony, efetuou o pagamento de apenas R$ 100,00, indicando expressamente que o valor quitava o débito B. Nos termos do Código Civil, houve:",
+                opt: [
+                    "a) Sub-rogação passiva.",
+                    "b) Novação objetiva.",
+                    "c) Dação em pagamento.",
+                    "d) Imputação do pagamento."
+                ],
+                ans: 3,
+                reason: "Art. 352, CC. A Imputação do Pagamento é o direito do devedor de indicar qual dentre duas ou mais dívidas da mesma natureza e ao mesmo credor ele está quitando com aquele pagamento."
+            },
+            {
+                q: "7. Sobre a Violação Positiva do Contrato, analise as assertivas e assinale a alternativa correta.\n1. Decorre do descumprimento dos deveres anexos (ou laterais) de conduta, como proteção, informação e cooperação.\n2. Sua fundamentação jurídica encontra-se no princípio da boa-fé objetiva.\n3. A responsabilidade por essa quebra independe de prova de culpa (Enunciado 24 do CJF).",
+                opt: [
+                    "a) Apenas 1 e 2 estão corretas.",
+                    "b) Apenas 2 e 3 estão corretas.",
+                    "c) Apenas 1 e 3 estão corretas.",
+                    "d) 1, 2 e 3 estão corretas."
+                ],
+                ans: 3,
+                reason: "Todas estão corretas. A violação positiva do contrato é uma modalidade de inadimplemento baseada na quebra da confiança e dos deveres de conduta (boa-fé), gerando responsabilidade objetiva."
+            },
+            {
+                q: "8. Homer Simpson firma contrato de compra e venda de um carro com Ned Flanders e, no ato, entrega R$ 2.000,00 a título de sinal, com o exclusivo fim de confirmar o negócio (não há cláusula de arrependimento). Na semana seguinte, Homer desiste de comprar o carro por capricho. O que ocorrerá?",
+                opt: [
+                    "a) Flanders deverá devolver os R$ 2.000,00, pois Homer desistiu antes da entrega.",
+                    "b) Flanders poderá considerar o negócio desfeito e reter integralmente os R$ 2.000,00 dados como arras.",
+                    "c) Flanders deverá devolver R$ 1.000,00 e reter o restante.",
+                    "d) Flanders terá que devolver os R$ 2.000,00 em dobro para Homer."
+                ],
+                ans: 1,
+                reason: "Art. 418, CC. Nas arras confirmatórias, se a parte que deu o sinal inexecutar o contrato, a outra pode retê-lo e considerar o contrato desfeito."
+            },
+            {
+                q: "9. Utilizando o mesmo caso anterior: imagine que o contrato possuísse uma cláusula expressa garantindo a ambas as partes o \"Direito de Arrependimento\" (arras penitenciais). Se Flanders (quem recebeu o sinal) for quem decidir desistir do negócio, ele deverá:",
+                opt: [
+                    "a) Apenas devolver os R$ 2.000,00 que recebeu.",
+                    "b) Devolver os R$ 2.000,00 mais o equivalente (ou seja, pagar R$ 4.000,00 no total), sem direito a perdas e danos suplementares.",
+                    "c) Devolver os R$ 2.000,00 e ainda pagar lucros cessantes.",
+                    "d) Flanders não pode desistir sob pena de prisão civil."
+                ],
+                ans: 1,
+                reason: "Art. 420, CC. Nas arras penitenciais, quem recebeu e desistiu deve devolver em dobro (o valor recebido mais o equivalente). Nessas arras (penitenciais), não há direito a indenização suplementar."
+            },
+            {
+                q: "10. Assinale a alternativa INCORRETA sobre o regramento das Perdas e Danos no Código Civil:",
+                opt: [
+                    "a) Abrangem o que o credor efetivamente perdeu (danos emergentes).",
+                    "b) Abrangem o que o credor razoavelmente deixou de lucrar (lucros cessantes).",
+                    "c) Nas obrigações de pagamento em dinheiro, abrangem juros, custas, honorários e atualização monetária.",
+                    "d) O devedor responde por perdas e danos mesmo quando a impossibilidade da prestação resultar de caso fortuito ou força maior que ele não provocou."
+                ],
+                ans: 3,
+                reason: "A alternativa 'd' é INCORRETA (Art. 393, CC). O devedor NÃO responde pelos prejuízos resultantes de caso fortuito ou força maior se expressamente não se houver por eles responsabilizado."
+            },
+            {
+                q: "11. Batman deve R$ 5.000,00 ao Coringa por conta de um acordo judicial. O Coringa, por sua vez, deve R$ 3.000,00 ao Batman por conta de um dano material. Ambas as dívidas são em dinheiro, líquidas e estão vencidas. Eles podem extinguir a dívida até onde se equivalerem por meio do instituto da:",
+                opt: [
+                    "a) Dação em pagamento.",
+                    "b) Confusão.",
+                    "c) Compensação.",
+                    "d) Novação recíproca."
+                ],
+                ans: 2,
+                reason: "Art. 368, CC. A compensação opera quando duas pessoas são ao mesmo tempo credora e devedora uma da outra, extinguindo as obrigações reciprocamente até onde se equivalerem."
+            },
+            {
+                q: "12. Sobre a Novação, analise as assertivas e assinale a alternativa correta.\n1. É a criação de uma obrigação nova para extinguir e substituir a anterior.\n2. O \"animus novandi\" (intenção de inovar) é requisito essencial, sob pena de a nova obrigação apenas confirmar a primeira.\n3. Uma simples prorrogação de prazo de pagamento configura novação automática.",
+                opt: [
+                    "a) Apenas 1 e 2 estão corretas.",
+                    "b) Apenas 2 e 3 estão corretas.",
+                    "c) Apenas 1 e 3 estão corretas.",
+                    "d) 1, 2 e 3 estão corretas."
+                ],
+                ans: 0,
+                reason: "A assertiva 3 é FALSA. Simples tolerância do credor ou prorrogação de prazo não configuram novação (Art. 361, CC). É preciso o ânimo de extinguir a dívida velha criando uma nova."
+            },
+            {
+                q: "13. Michael Scott assinou um contrato de aluguel onde se comprometeu a pagar o condomínio sempre no dia 05 de cada mês. Ele esqueceu de pagar a fatura de maio. A partir do dia 06 de maio, sobre esse valor em atraso, deverão incidir juros:",
+                opt: [
+                    "a) Remuneratórios, pois remuneram o capital do locador.",
+                    "b) Compensatórios, pois compensam a inflação.",
+                    "c) Moratórios, pois constituem sanção imposta pelo atraso no cumprimento da obrigação.",
+                    "d) Processuais, devidos apenas após sentença do juiz."
+                ],
+                ans: 2,
+                reason: "Os juros moratórios representam a pena pelo atraso no cumprimento da obrigação. Diferem dos remuneratórios/compensatórios, que funcionam como \"aluguel\" (fruto) pelo uso do dinheiro."
+            },
+            {
+                q: "14. Walter White compra equipamentos que custam R$ 100 mil. Ele paga R$ 90 mil em dia, mas atrasa a última parcela de R$ 10 mil. O contrato previa uma cláusula penal de R$ 100 mil para qualquer inadimplemento. Diante desse quadro e do Código Civil:",
+                opt: [
+                    "a) A multa deverá ser paga integralmente por força do pacta sunt servanda (o contrato faz lei entre as partes).",
+                    "b) A multa deverá ser reduzida equitativamente pelo juiz por ser manifestamente excessiva e a obrigação ter sido parcialmente cumprida.",
+                    "c) A cláusula penal é nula e não poderá ser cobrada em hipótese alguma.",
+                    "d) A obrigação resolve-se em perdas e danos ilimitados."
+                ],
+                ans: 1,
+                reason: "Art. 413, CC. O juiz DEVE (é norma de ordem pública) reduzir a cláusula penal equitativamente quando a obrigação for cumprida em parte ou se a penalidade for manifestamente excessiva."
+            },
+            {
+                q: "15. Assinale a alternativa INCORRETA sobre as consequências da Mora do Credor (mora accipiendi):",
+                opt: [
+                    "a) Subtrai do devedor isento de dolo a responsabilidade pela conservação da coisa.",
+                    "b) Obriga o credor a ressarcir as despesas empregadas em conservar a coisa.",
+                    "c) Sujeita o credor a recebê-la pela estimação mais favorável ao devedor (se o valor oscilar).",
+                    "d) Transfere para o devedor a responsabilidade absoluta por qualquer caso fortuito ou força maior."
+                ],
+                ans: 3,
+                reason: "A alternativa 'd' é INCORRETA. A mora do credor faz exatamente o contrário: tira do devedor a responsabilidade pela conservação (desde que o devedor não atue com dolo), conforme o Art. 400 do CC."
+            },
+            {
+                q: "16. Sheldon Cooper quebrou um contrato de forma absoluta. A cláusula penal compensatória prevista no contrato era de R$ 10.000. Ocorre que o credor provou que teve um prejuízo real de R$ 50.000. O contrato NÃO possuía previsão autorizando indenização suplementar. O credor poderá cobrar de Sheldon:",
+                opt: [
+                    "a) Apenas os R$ 10.000 da cláusula penal.",
+                    "b) Os R$ 50.000, ignorando a cláusula penal.",
+                    "c) R$ 60.000, somando a multa com os prejuízos.",
+                    "d) Apenas as arras confirmatórias."
+                ],
+                ans: 0,
+                reason: "Art. 416, Parágrafo único, CC. Se não houver previsão contratual expressa autorizando a indenização suplementar, o credor só pode cobrar o valor fixado na cláusula penal, ainda que o prejuízo seja maior."
+            },
+            {
+                q: "17. Analise as assertivas sobre as formas de Extinção das Obrigações e indique a opção correta.\n1. A Remissão é o perdão da dívida. Sendo um ato bilateral, exige a aceitação do devedor.\n2. Se o devedor recusar o perdão (remissão), poderá ingressar com ação de consignação em pagamento para forçar o credor a receber.\n3. A Dação em Pagamento obriga o credor a aceitar coisa diversa da contratada se ela for mais valiosa que o dinheiro devido.",
+                opt: [
+                    "a) Apenas 1 e 2 estão corretas.",
+                    "b) Apenas 2 e 3 estão corretas.",
+                    "c) Apenas 1 e 3 estão corretas.",
+                    "d) 1, 2 e 3 estão corretas."
+                ],
+                ans: 0,
+                reason: "A assertiva 3 é FALSA (Art. 313, CC). O credor não é obrigado a receber prestação diversa da que lhe é devida, AINDA QUE mais valiosa. A dação exige consentimento."
+            },
+            {
+                q: "18. Peter Quill, devendo R$ 100 mil, oferece sua nave (avaliada em 100 mil) como dação em pagamento, sendo aceita pelo credor. Tempos depois, a nave é apreendida pela justiça, pois na verdade pertencia a terceiros (ocorreu a evicção). Qual a consequência jurídica?",
+                opt: [
+                    "a) A dívida originária de R$ 100 mil é extinta definitivamente.",
+                    "b) Ocorre a confusão patrimonial das partes.",
+                    "c) Restabelece-se a obrigação originária, ficando sem efeito a quitação dada, ressalvados os direitos de terceiros de boa-fé.",
+                    "d) O credor sofre os prejuízos da evicção sem poder cobrar mais nada."
+                ],
+                ans: 2,
+                reason: "Art. 359, CC. Se o credor for evicto (perder o bem) da coisa recebida em pagamento, restabelecer-se-á a obrigação primitiva."
+            },
+            {
+                q: "19. Assinale a alternativa INCORRETA sobre a mora e os juros legais:",
+                opt: [
+                    "a) O inadimplemento da obrigação, positiva e líquida, no seu termo (data certa), constitui de pleno direito em mora o devedor (mora ex re).",
+                    "b) Não havendo termo (data de vencimento estipulada), a mora constitui-se mediante interpelação judicial ou extrajudicial (mora ex persona).",
+                    "c) Os juros de mora são devidos somente se o credor conseguir provar o prejuízo efetivo causado pelo atraso.",
+                    "d) Quando os juros moratórios não forem convencionados, serão fixados segundo a taxa que estiver em vigor para a mora de impostos à Fazenda Nacional."
+                ],
+                ans: 2,
+                reason: "A alternativa 'c' é INCORRETA (Art. 407, CC). Os juros de mora são devidos independentemente de alegação ou prova de prejuízo."
+            },
+            {
+                q: "20. O princípio conhecido como \"Dies interpellat pro homine\" (O dia interpela o homem) tem relação com qual instituto do direito das obrigações?",
+                opt: [
+                    "a) Mora ex re, significando que o simples advento do termo (dia do vencimento) já constitui o devedor em mora.",
+                    "b) Mora ex persona, significando que o credor precisa intimar o devedor no dia.",
+                    "c) Cláusula penal moratória presumida.",
+                    "d) Dação em pagamento temporária."
+                ],
+                ans: 0,
+                reason: "O brocardo \"dies interpellat pro homine\" justifica a mora ex re (Art. 397 caput). A própria data do vencimento dispensa a notificação pessoal do devedor."
+            },
+            {
+                q: "21. A e B são credores solidários de C no valor de R$ 10.000. O credor A, sem consultar B, resolve perdoar integralmente a dívida (remissão) em favor de C. Nessa situação:",
+                opt: [
+                    "a) O perdão é nulo, pois na solidariedade ativa a remissão exige unanimidade.",
+                    "b) O devedor C fica totalmente exonerado da dívida, mas o credor A terá de repassar a cota-parte de B (R$ 5.000) a ele.",
+                    "c) O devedor C ainda deve R$ 5.000 para B.",
+                    "d) A solidariedade é rompida e B só pode cobrar sua metade de C."
+                ],
+                ans: 1,
+                reason: "Art. 272, CC. Na solidariedade ATIVA, o perdão dado por um credor extingue a dívida para o devedor, mas o credor que perdoou responde perante os demais credores pelas suas respectivas cotas."
+            },
+            {
+                q: "22. Analise as assertivas sobre as consequências do inadimplemento: \n1. Nas obrigações provenientes de ato ilícito, considera-se o devedor em mora desde a data em que for cientificado judicialmente (citação).\n2. Nas obrigações negativas, o devedor é havido por inadimplente desde o dia em que executou o ato de que se devia abster.\n3. O devedor não responde pelos prejuízos resultantes de caso fortuito ou força maior se expressamente não se houver por eles responsabilizado.",
+                opt: [
+                    "a) Apenas 1 e 2 estão corretas.",
+                    "b) Apenas 2 e 3 estão corretas.",
+                    "c) Apenas 1 e 3 estão corretas.",
+                    "d) 1, 2 e 3 estão corretas."
+                ],
+                ans: 1,
+                reason: "A assertiva 1 é FALSA (Súmula 54 STJ e Art. 398 CC). No ato ilícito (extracontratual), a mora ocorre no momento do evento danoso, e não na citação judicial."
+            },
+            {
+                q: "23. Assinale a alternativa INCORRETA em relação à Violação Positiva do Contrato:",
+                opt: [
+                    "a) Ocorre quando os deveres principais são cumpridos, mas há quebra de deveres anexos (lealdade, confiança, informação).",
+                    "b) Sua fundamentação baseia-se na boa-fé objetiva e seus deveres colaterais.",
+                    "c) Gera responsabilidade civil subjetiva, sendo estritamente necessário que o credor prove a culpa grave ou o dolo do devedor.",
+                    "d) A falta de informações claras sobre o manuseio perigoso de um produto entregue no prazo é um exemplo desse instituto."
+                ],
+                ans: 2,
+                reason: "A alternativa 'c' é INCORRETA (Enunciado 24 CJF). A violação dos deveres anexos gera responsabilidade OBJETIVA, baseada na quebra de confiança, independendo de prova de culpa."
+            },
+            {
+                q: "24. Frodo se obriga a entregar um anel valioso a Sam no dia 10. No dia 09, a casa de Frodo é atingida por um raio fortuito e imprevisível e o anel é destruído (impossibilidade absoluta sem culpa). O que acontece com a obrigação?",
+                opt: [
+                    "a) Resolve-se a obrigação, retornando as partes ao estado anterior, sem imposição de perdas e danos a Frodo.",
+                    "b) Frodo cometeu violação positiva e deverá indenizar lucros cessantes.",
+                    "c) Frodo responde por perdas e danos, pois é uma obrigação pecuniária.",
+                    "d) Ocorre a purgação da mora de Frodo."
+                ],
+                ans: 0,
+                reason: "Art. 234 e 393 do CC. Impossibilidade da prestação sem culpa do devedor (caso fortuito/força maior) resolve (extingue) a obrigação, sem perdas e danos."
+            },
+            {
+                q: "25. A Empresa Alpha devia R$ 200.000,00 para a Empresa Beta. A Empresa Alpha é comprada pela Empresa Beta (incorporação), extinguindo-se a dívida por confusão patrimonial. Um ano depois, o CADE (órgão do governo) anula a compra por formação de monopólio. O que ocorre com a dívida extinta?",
+                opt: [
+                    "a) Permanece extinta para segurança do mercado financeiro.",
+                    "b) É convertida em multa compensatória a favor da união.",
+                    "c) Desfaz-se a confusão e a obrigação ressurge integralmente, com todos os seus acessórios.",
+                    "d) Ocorre a novação tributária."
+                ],
+                ans: 2,
+                reason: "Art. 384, CC. Cessando a confusão (pela anulação do negócio, por exemplo), para logo se restabelece a obrigação anterior, com todos os seus acessórios."
+            },
+            {
+                q: "26. Analise as assertivas sobre Arras (Sinal):\n1. Se houver estipulação expressa do direito de arrependimento, as arras serão penitenciais, com função unicamente indenizatória, sem direito à indenização suplementar.\n2. Se a inexecução for de quem recebeu o sinal, poderá quem o deu haver o contrato por desfeito e exigir a devolução em dobro.\n3. As arras confirmatórias impedem o direito a qualquer indenização suplementar, mesmo que o prejuízo seja o triplo do sinal dado.",
+                opt: [
+                    "a) Apenas 1 e 2 estão corretas.",
+                    "b) Apenas 2 e 3 estão corretas.",
+                    "c) Apenas 1 e 3 estão corretas.",
+                    "d) 1, 2 e 3 estão corretas."
+                ],
+                ans: 0,
+                reason: "A assertiva 3 é FALSA. O Art. 419 do CC permite SIM à parte inocente pedir indenização suplementar caso o prejuízo seja maior e as arras sejam apenas confirmatórias."
+            },
+            {
+                q: "27. Em um contrato, foi fixada uma Cláusula Penal Moratória (multa de 1% por dia de atraso na entrega). O credor que sofrer com o atraso poderá:",
+                opt: [
+                    "a) Escolher entre exigir a multa OU exigir o cumprimento da obrigação.",
+                    "b) Exigir a satisfação da pena cominada JUNTAMENTE com o cumprimento da obrigação principal.",
+                    "c) Exigir apenas a multa, ficando a obrigação principal extinta.",
+                    "d) Transformar a multa em arras penitenciais."
+                ],
+                ans: 1,
+                reason: "Art. 411, CC. Na cláusula penal moratória (estipulada para o atraso), o credor tem o direito de cumular: pode exigir a multa MAIS o cumprimento da obrigação."
+            },
+            {
+                q: "28. Qual a diferença fundamental apontada pela doutrina entre Juros Remuneratórios e Juros Moratórios?",
+                opt: [
+                    "a) Os remuneratórios só existem em bancos; os moratórios apenas entre particulares.",
+                    "b) Os remuneratórios funcionam como um 'aluguel' (fruto) pelo uso do capital alheio ao longo do tempo; os moratórios são a pena/sanção imposta pelo atraso no pagamento.",
+                    "c) Os remuneratórios cobrem danos morais; os moratórios cobrem danos materiais.",
+                    "d) Não há diferença prática ou legal."
+                ],
+                ans: 1,
+                reason: "Correto. Juros remuneratórios ou compensatórios representam rendimento de capital. Juros moratórios têm natureza indenizatória/punitiva pelo descumprimento do prazo."
+            },
+            {
+                q: "29. Assinale a alternativa INCORRETA sobre o pagamento por Terceiro Interessado (ex: o fiador que paga a dívida do afiançado):",
+                opt: [
+                    "a) Sub-roga-se de pleno direito nos direitos do credor.",
+                    "b) Pode cobrar do devedor primitivo tudo o que pagou.",
+                    "c) Recebe e herda todas as garantias (como hipoteca ou penhor) que o credor originário tinha.",
+                    "d) O terceiro não interessado que paga a dívida em seu próprio nome tem o mesmo direito de sub-rogação e herda as garantias.",
+                ],
+                ans: 3,
+                reason: "A alternativa 'd' é INCORRETA (Art. 305). O terceiro NÃO interessado que paga a dívida em seu próprio nome tem direito a se reembolsar, mas NÃO se sub-roga nos direitos e garantias do credor."
+            },
+            {
+                q: "30. Empresa A e Empresa B celebram acordo estipulando cláusula penal compensatória em R$ 100 mil. A Empresa A não cumpre totalmente a obrigação. A Empresa B pode:",
+                opt: [
+                    "a) Exigir o cumprimento da obrigação principal E a cláusula penal de 100 mil cumulativamente.",
+                    "b) O inadimplemento total converte a cláusula penal em alternativa a benefício do credor, ou seja, a Empresa B exige os R$ 100 mil OU exige perdas e danos comprovados (não os dois).",
+                    "c) Exigir apenas 50 mil, pois cláusulas compensatórias devem ser divididas.",
+                    "d) A Empresa B deve comprovar que perdeu no mínimo 100 mil para poder ativar a cláusula."
+                ],
+                ans: 1,
+                reason: "Art. 410, CC. A cláusula penal compensatória atua como prefixação de perdas e danos e substitui a obrigação inexecutada. Ela é uma alternativa a benefício do credor."
+            }
+        ];
+
+        let rightAnswers = 0;
+        let wrongAnswers = 0;
+
+        function buildQuiz() {
+            const container = document.getElementById('quiz-container');
+            
+            quizData.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                
+                const title = document.createElement('div');
+                title.className = 'question-text';
+                title.textContent = item.q;
+                card.appendChild(title);
+
+                const optsContainer = document.createElement('div');
+                optsContainer.className = 'options';
+
+                const feedbackArea = document.createElement('div');
+                feedbackArea.className = 'feedback';
+
+                item.opt.forEach((optText, optIdx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'opt-btn';
+                    btn.textContent = optText;
+                    
+                    btn.onclick = () => {
+                        const allBtns = optsContainer.querySelectorAll('.opt-btn');
+                        allBtns.forEach(b => b.disabled = true);
+
+                        if(optIdx === item.ans) {
+                            btn.classList.add('correct');
+                            feedbackArea.classList.add('is-correct');
+                            feedbackArea.innerHTML = `<strong>✔️ Correto!</strong><div class="explanation">${item.reason}</div>`;
+                            rightAnswers++;
+                            document.getElementById('score-correct').textContent = rightAnswers;
+                        } else {
+                            btn.classList.add('wrong');
+                            allBtns[item.ans].classList.add('correct');
+                            feedbackArea.classList.add('is-wrong');
+                            feedbackArea.innerHTML = `<strong>❌ Incorreto.</strong> A alternativa em verde é a certa.<div class="explanation">${item.reason}</div>`;
+                            wrongAnswers++;
+                            document.getElementById('score-wrong').textContent = wrongAnswers;
+                        }
+                        feedbackArea.style.display = 'block';
+                    };
+                    
+                    optsContainer.appendChild(btn);
+                });
+
+                card.appendChild(optsContainer);
+                card.appendChild(feedbackArea);
+                container.appendChild(card);
+            });
+        }
+
+        window.onload = () => {
+            buildQuiz();
+        };
+    </script>
+</body>
+</html>
