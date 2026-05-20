@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treinamento Avançado - Inadimplemento das Obrigações</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #334155;
+            --accent: #2563eb;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --success: #059669;
+            --success-bg: #d1fae5;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #f8fafc;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: #cbd5e1;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .score-panel {
+            display: flex;
+            justify-content: space-between;
+            background: var(--card-bg);
+            padding: 1.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .score-panel span.correct-count { color: var(--success); }
+        .score-panel span.incorrect-count { color: var(--danger); }
+
+        .question-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            white-space: pre-wrap;
+            color: var(--primary);
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .opt-btn {
+            text-align: left;
+            padding: 1rem 1.2rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: #fdfdfd;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .opt-btn:hover:not(:disabled) {
+            background-color: #eff6ff;
+            border-color: var(--accent);
+        }
+
+        .opt-btn:disabled {
+            cursor: default;
+        }
+
+        .opt-btn.correct {
+            background-color: var(--success-bg);
+            border-color: var(--success);
+            color: #065f46;
+            font-weight: bold;
+        }
+
+        .opt-btn.wrong {
+            background-color: var(--danger-bg);
+            border-color: var(--danger);
+            color: #991b1b;
+        }
+
+        .feedback {
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            display: none;
+            padding: 1.2rem;
+            border-radius: 8px;
+            line-height: 1.5;
+            border-left: 5px solid transparent;
+        }
+        
+        .feedback.is-correct {
+            background-color: #f0fdf4;
+            border-color: var(--success);
+            color: #166534;
+        }
+
+        .feedback.is-wrong {
+            background-color: #fff1f2;
+            border-color: var(--danger);
+            color: #9f1239;
+        }
+
+        .explanation {
+            margin-top: 0.8rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            font-weight: 500;
+        }
+
+        @media (max-width: 600px) {
+            .question-card { padding: 1.2rem; }
+            .score-panel { flex-direction: column; gap: 0.8rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Simulado Interativo e Comentado</h1>
+        <p>Inadimplemento das Obrigações - Concursos (VUNESP, FCC, FGV, etc.)</p>
+    </header>
+
+    <main>
+        <div class="score-panel">
+            <span>Total: <span id="total-q">43</span></span>
+            <span class="correct-count">Acertos: <span id="score-correct">0</span></span>
+            <span class="incorrect-count">Erros: <span id="score-wrong">0</span></span>
+        </div>
+
+        <div id="quiz-container"></div>
+    </main>
+
+    <script>
+        const quizData = [
+            {
+                q: "03. (VUNESP - TJSP - 2017) Em relação à cláusula penal decorrente da inexecução de obrigação, assinale a alternativa correta.",
+                opt: [
+                    "(A) A exigibilidade da cláusula penal perante pessoa jurídica está condicionada à comprovação de abuso da personalidade jurídica...",
+                    "(B) Para exigir a pena convencional, é necessário que o credor alegue o prejuízo e que este não exceda o valor da obrigação principal.",
+                    "(C) O prejuízo excedente à cláusula penal poderá ser exigido se houver expressa convenção contratual nesse sentido.",
+                    "(D) Sempre que o prejuízo exceder a pena convencional, o credor poderá exigir indenização suplementar, competindo-lhe provar o prejuízo excedente."
+                ],
+                ans: 2,
+                reason: "Art. 416, parágrafo único, do Código Civil. Ainda que o prejuízo seja maior, o credor não pode exigir indenização suplementar se não houver convenção prévia e expressa nesse sentido."
+            },
+            {
+                q: "04. (FCC-TJSC - 2017) A cláusula penal",
+                opt: [
+                    "(A) pode ter valor excedente ao da obrigação principal, ressalvado ao juiz reduzi-lo equitativamente.",
+                    "(B) incide de pleno direito, se o devedor, ainda que isento de culpa, deixar de cumprir a obrigação ou se constituir-se em mora.",
+                    "(C) incide de pleno direito, se o devedor, culposamente, deixar de cumprir a obrigação ou se constituir-se em mora.",
+                    "(D) exclui, sob pena de invalidade, qualquer estipulação que estabeleça indenização suplementar.",
+                    "(E) sendo indivisível a obrigação, implica que todos os devedores, caindo em falta um deles, serão responsáveis pelo valor integral."
+                ],
+                ans: 2,
+                reason: "Art. 408 do CC. Incorre de pleno direito o devedor na cláusula penal, desde que, culposamente, deixe de cumprir a obrigação ou se constitua em mora."
+            },
+            {
+                q: "05. (CONSULPLAN - TJMG - 2017) João Silva contratou compra de um imóvel. Convencionou-se que, em caso de atraso na entrega, a construtora pagaria pena/multa mensal de 0,5% do valor do contrato. Vencido o prazo, a construtora não entregou o imóvel. João ingressou pedindo lucros cessantes de 1% do contrato + perdas e danos. Neste caso, é correto afirmar que:",
+                opt: [
+                    "(A) Os pedidos de lucros cessantes e perdas e danos podem ser acolhidos, já que a pena convencional contratada não suprime outros direitos...",
+                    "(B) O comprador lesado tem direito não só às parcelas de lucros cessantes e perdas e danos, mas também à pena convencional de forma cumulada...",
+                    "(C) Não tem direito às parcelas reclamadas, já que houve antes entre as partes o arbitramento prévio e expresso de pena convencional para o caso de mora.",
+                    "(D) O comprador não tem direito às parcelas reclamadas, mas tem direito de pedir que a pena convencional lhe seja paga em dobro (relação de consumo)."
+                ],
+                ans: 2,
+                reason: "Tema 970 do STJ: A cláusula penal moratória já possui finalidade indenizatória. Sendo estipulada em valor equivalente ao locativo (como é o caso de percentual mensal do imóvel), afasta-se sua cumulação com lucros cessantes para evitar bis in idem."
+            },
+            {
+                q: "06. (FCC-DPE-PR - 2017) Considere as assertivas a seguir sobre os negócios jurídicos:\nI. As arras confirmatórias têm natureza de direito real e, logo, pressupõem tradição para o aperfeiçoamento.\nII. Sem previsão de cláusula de arrependimento expressa no contrato, não há possibilidade de indenização a título de arras penitenciais.\nIII. Mesmo em contrato preliminar, o vício de forma é insuscetível de convalidação.\nIV. O inadimplemento das arras confirmatórias implica a responsabilidade civil contratual do devedor.\nEstá correto o que se afirma APENAS em:",
+                opt: [
+                    "(A) III.",
+                    "(B) IV.",
+                    "(C) III e IV.",
+                    "(D) I, II e III.",
+                    "(E) I e II."
+                ],
+                ans: 4,
+                reason: "As arras (sinal) possuem natureza de contrato real, pois o Art. 417 do CC exige que a coisa (dinheiro ou móvel) seja DADA (tradição). Além disso, as arras penitenciais (Art. 420) exigem expressa estipulação do direito de arrependimento."
+            },
+            {
+                q: "07. (FUNECE - UECE - 2017) Assinale a assertiva que está de acordo com o Código Civil Brasileiro no que concerne à mora no cumprimento das obrigações.",
+                opt: [
+                    "(A) O devedor em mora responde pela impossibilidade da prestação... não se aplicando a possibilidade de isenção de culpa.",
+                    "(B) A mora do credor subtrai o devedor, ainda que haja este com dolo, à responsabilidade pela conservação da coisa...",
+                    "(C) Nas obrigações provenientes de ato ilícito, considera-se o devedor em mora, desde a liquidação do dano.",
+                    "(D) Purga-se a mora por parte do credor, oferecendo-se este a receber o pagamento e sujeitando-se aos efeitos da mora até a mesma data."
+                ],
+                ans: 3,
+                reason: "Art. 401, inciso II, do CC dispõe textualmente: \"Purga-se a mora: por parte do credor, oferecendo-se este a receber o pagamento e sujeitando-se aos efeitos da mora até a mesma data\"."
+            },
+            {
+                q: "08. (VUNESP - MPE-SP - 2018) Considere as seguintes situações:\ni) pagamento inicial a ser descontado;\nii) atraso no pagamento sujeita devedor à multa de 10%;\niii) se não cumprir a avença, ressarcir em valor equivalente a 50%;\niv) caso desista, pode reter sinal ou devolver o recebido mais o equivalente.\nAs situações retratam, respectivamente:",
+                opt: [
+                    "(A) arras confirmatórias, multa compensatória, multa moratória, arras penitenciais.",
+                    "(B) multa compensatória, arras penitenciais, arras confirmatórias, multa moratória.",
+                    "(C) arras penitenciais, multa moratória, multa compensatória, arras confirmatórias.",
+                    "(D) arras penitenciais, multa compensatória, multa moratória, arras confirmatórias.",
+                    "(E) arras confirmatórias, multa moratória, multa compensatória, arras penitenciais."
+                ],
+                ans: 4,
+                reason: "Desconto/confirmação = Arras confirmatórias. Atraso = Moratória. Descumprimento da avença = Compensatória. Desistência lícita = Arras penitenciais."
+            },
+            {
+                q: "09. (FCC-PGE-AP - 2018) Incorre de pleno direito o devedor na cláusula penal, desde que:",
+                opt: [
+                    "(A) culposamente, deixe de cumprir a obrigação ou se constitua em mora e, sendo indivisível a obrigação, todos os devedores incorrerão na pena; mas esta só se poderá demandar integralmente do culpado... (sendo reduzida pelo juiz se cumprida em parte).",
+                    "(B) independentemente de culpa ou dolo, deixe de cumprir a obrigação...",
+                    "(C) independentemente de culpa ou dolo... sendo solidária a obrigação...",
+                    "(D) culposamente... exceder o valor da principal e o juiz não poderá reduzi-la.",
+                    "(E) culposamente... credor poderá exigir indenização suplementar, independentemente de estipulação no contrato..."
+                ],
+                ans: 0,
+                reason: "Corresponde à junção literal dos Artigos 408 (exige culpa), 414 (obrigação indivisível: pena demanda-se do culpado, outros só pela quota) e 413 (redução equitativa pelo juiz)."
+            },
+            {
+                q: "10. (FUMARC - PC-MG - 2018) Nas obrigações negativas (de não fazer), o devedor é considerado inadimplente:",
+                opt: [
+                    "(A) a partir da sua citação.",
+                    "(B) a partir da sua constituição em mora pelo credor.",
+                    "(C) a partir do ajuizamento da ação pelo credor.",
+                    "(D) desde o dia em que executou o ato de que se devia abster."
+                ],
+                ans: 3,
+                reason: "Art. 390 do CC: 'Nas obrigações negativas o devedor é havido por inadimplente desde o dia em que executou o ato de que se devia abster'."
+            },
+            {
+                q: "11. (CESPE - EBSERH - 2018) Julgue o item: A cobrança de encargos e parcelas abusivas não impede a caracterização da mora do devedor, que deverá realizar o pagamento e reclamar, posteriormente, indenização.",
+                opt: [
+                    "(A) Certo",
+                    "(B) Errado"
+                ],
+                ans: 1,
+                reason: "Errado. Conforme entendimento consolidado do STJ (Tema 28 e Súmula), o reconhecimento da abusividade nos encargos exigidos no período da normalidade contratual (como juros remuneratórios excessivos) DESCARACTERIZA a mora do devedor."
+            },
+            {
+                q: "12. (VUNESP - TJ-SP - 2018) Com relação à mora, é correto afirmar:",
+                opt: [
+                    "(A) havendo retardo no cumprimento da obrigação, sempre estará caracterizada a mora.",
+                    "(B) o cumprimento integral e tempestivo da obrigação pode configurar mora na hipótese de o devedor, culposamente, cumprir a obrigação fora do lugar ou de forma diversa do estabelecido.",
+                    "(C) por regra de boa-fé objetiva, a purgação da mora sempre é possível, ainda que a prestação seja inútil ao credor.",
+                    "(D) o instituto da mora não se aplica ao credor."
+                ],
+                ans: 1,
+                reason: "Art. 394 do CC: Considera-se em mora o devedor que não efetuar o pagamento e o credor que não quiser recebê-lo no tempo, LUGAR e FORMA que a lei ou a convenção estabelecer."
+            },
+            {
+                q: "13. (FEPESE - PGE-SC - 2018) Dispõe o art. 397 do CC: 'O inadimplemento da obrigação, positiva e líquida, no seu termo, constitui de pleno direito em mora o devedor. Parágrafo único. Não havendo termo, a mora se constitui mediante interpelação'. É correto afirmar:",
+                opt: [
+                    "(A) o caput trata da mora ex persona, enquanto o parágrafo único trata da mora ex re.",
+                    "(B) pela disposição do parágrafo único, o próprio não pagamento no dia determinado é fato constitutivo da mora.",
+                    "(C) o caput trata da mora ex persona...",
+                    "(D) o caput trata da mora ex re, enquanto o parágrafo único trata da mora ex persona, sendo que a mora descrita no caput decorre do princípio dies interpellat pro homine.",
+                    "(E) o princípio dies interpellat pro homine significa que se faz necessária a interpelação judicial."
+                ],
+                ans: 3,
+                reason: "Caput (tem prazo/termo) = Mora ex re (dies interpellat pro homine: o dia interpela o homem, ou seja, a data já basta para caracterizar mora). Parágrafo Único (sem prazo) = Mora ex persona (precisa intimar/interpelar a pessoa)."
+            },
+            {
+                q: "14. (VUNESP - 2018) Christina e Márcio celebraram compromisso de compra e venda. Márcio exigiu condição resolutiva: o negócio estaria resolvido se constasse qualquer pendência judicial contra Christina. Na certidão, constou uma execução de 15 mil reais em desfavor dela. Assinale a alternativa correta:",
+                opt: [
+                    "(A) Márcio poderá valer-se da condição para resolver o negócio, exigindo a devolução do sinal.",
+                    "(B) A condição resolutiva é ilícita, pois sujeita o negócio jurídico ao puro arbítrio de Márcio.",
+                    "(C) A cláusula que contém a condição resolutiva é abusiva e nula de pleno direito.",
+                    "(D) Christina tem a prerrogativa legal de resolver a pendência judicial em até 30 dias...",
+                    "(E) Márcio poderá valer-se da condição para resolver o negócio, mas perderá o sinal em favor de Christina."
+                ],
+                ans: 0,
+                reason: "A condição resolutiva expressa opera de pleno direito (Art. 474 do CC). Sendo válida e ativada pelo fato objetivo (existência de processo), o contrato é resolvido, retornando as partes ao status quo ante."
+            },
+            {
+                q: "15. (CESPE - DPE-DF - 2019) Julgue: As perdas e danos, nas obrigações de pagamento em dinheiro, devem compreender as custas e os honorários advocatícios e, além da atualização monetária, os juros de mora a partir do descumprimento contratual.",
+                opt: [
+                    "(A) Certo",
+                    "(B) Errado"
+                ],
+                ans: 1,
+                reason: "Errado devido à expressão 'a partir do descumprimento contratual'. Na responsabilidade civil contratual, em regra, os juros de mora contam-se a partir da CITAÇÃO inicial (Art. 405 do CC)."
+            },
+            {
+                q: "16. (VUNESP - TJ-RS - 2019) A respeito da cláusula penal e as arras, assinale a alternativa correta.",
+                opt: [
+                    "(A) Sempre que o prejuízo exceder ao previsto na cláusula penal, pode o credor exigir indenização suplementar.",
+                    "(B) Se o contrato previu arras penitenciais, não haverá direito a indenização complementar.",
+                    "(C) A parte inocente não pode pedir indenização complementar às arras confirmatórias.",
+                    "(D) O valor da cominação imposta na cláusula penal pode exceder o da obrigação principal.",
+                    "(E) Para exigir a pena convencional, é necessário que o credor alegue prejuízo."
+                ],
+                ans: 1,
+                reason: "Art. 420 do CC: 'Se no contrato for estipulado o direito de arrependimento (arras penitenciais)... quem as deu perdê-las-á... não havendo direito a indenização suplementar'."
+            },
+            {
+                q: "17. (CESPE - TJ-SC - 2019) A multa estipulada em contrato que tenha por objeto evitar o inadimplemento da obrigação principal é denominada:",
+                opt: [
+                    "(A) multa penitencial.",
+                    "(B) cláusula penal.",
+                    "(C) perdas e danos.",
+                    "(D) arras penitenciais.",
+                    "(E) multa pura e simples."
+                ],
+                ans: 1,
+                reason: "A cláusula penal, também chamada de pena convencional, é a pactuação acessória por meio da qual as partes fixam, previamente, uma multa como liquidação das perdas e danos e para estimular o cumprimento."
+            },
+            {
+                q: "18. (NC-UFPR - TJ-PR - 2019) As arras negociais representam uma garantia às partes. Assinale a alternativa correta.",
+                opt: [
+                    "(A) Se... dinheiro ou bem móvel, deverão as arras ser restituídas, ainda que de gênero diverso...",
+                    "(B) Se a inexecução for de quem ofertou, a outra retém... se for de quem recebeu, devolve com atualização, mas sem juros e honorários.",
+                    "(C) A parte inocente pode pedir indenização suplementar, se provar maior prejuízo, valendo as arras como taxa mínima, podendo a parte inocente exigir a execução do contrato, com as perdas e danos...",
+                    "(D) Se no contrato não for estipulado arrependimento, as arras terão função unicamente indenizatória.",
+                    "(E) Não existem arras indenizatórias em contratos comutativos."
+                ],
+                ans: 2,
+                reason: "Trata-se da redação exata do Art. 419 do CC: a parte inocente (nas arras confirmatórias) pode pedir indenização suplementar provando o maior prejuízo, e exigir a execução."
+            },
+            {
+                q: "19. (FCC - TJ-MS - 2020) Quanto à mora e às perdas e danos, é correto afirmar:",
+                opt: [
+                    "(A) A mora do credor subtrai o devedor isento de dolo à responsabilidade pela conservação da coisa, obriga o credor a ressarcir as despesas... e sujeita-o a recebê-la pela estimação mais favorável ao devedor.",
+                    "(B) Havendo fato ou omissão imputável ao devedor, este não incorre em mora.",
+                    "(C) Nas obrigações de ato ilícito, considera-se em mora a partir do ajuizamento da ação.",
+                    "(D) O devedor em mora responde pela impossibilidade da prestação, salvo, em qualquer caso, se resultar de força maior.",
+                    "(E) Salvo dolo, as perdas e danos só incluem os prejuízos efetivos, mas não lucros cessantes."
+                ],
+                ans: 0,
+                reason: "Cópia literal do Art. 400 do CC sobre os efeitos da mora accipiendi (mora do credor)."
+            },
+            {
+                q: "20. (VUNESP - FITO - 2020) O taxista Arlindo encomendou um veículo para trabalhar. A montadora atrasou a entrega em 2 meses. Arlindo propõe ação exigindo a multa contratual de 1% ao mês e os lucros cessantes (quantia que receberia trabalhando como taxista). Segundo o STJ:",
+                opt: [
+                    "(A) O juiz deverá conceder a cláusula penal mais as perdas e danos se for moratória.",
+                    "(B) O juiz deverá conceder a cláusula penal mais perdas e danos se for compensatória.",
+                    "(C) Concede-se a faculdade de requerer o cumprimento + multa + indenização.",
+                    "(D) Não há óbice a que se exija a cláusula penal moratória juntamente com os lucros cessantes.",
+                    "(E) A cláusula penal moratória tem a finalidade de indenizar pelo adimplemento tardio, e estabelecida em valor equivalente ao locativo, afasta-se sua cumulação com lucros cessantes."
+                ],
+                ans: 4,
+                reason: "Tema 970 do STJ: A cláusula penal (moratória), que prevê multa mensal equivalente aos aluguéis do bem, tem a função de indenizar os prejuízos, não sendo possível cumular com lucros cessantes."
+            },
+            {
+                q: "21. (VUNESP - TJSP - 2021) Assinale a alternativa correta sobre cláusula penal.",
+                opt: [
+                    "(A) Deve ser convencionada simultaneamente, não se admitindo em ato posterior.",
+                    "(B) Deve ser reduzida de ofício pelo juiz de modo equitativo, caso verifique o parcial cumprimento da prestação ou se for manifestamente excessiva.",
+                    "(C) Para exigir, não é necessário alegar prejuízo, mas, se exceder a multa, não poderá ser cobrada suplementar ainda que convencionado.",
+                    "(D) Quando estipular para o total inadimplemento, a parte poderá escolher entre a multa ou as perdas e danos sofrias em razão do inadimplemento (não ambos)."
+                ],
+                ans: 1,
+                reason: "Art. 413 do CC. O dever de redução equitativa pelo juiz é norma de ordem pública."
+            },
+            {
+                q: "22. (VUNESP - TJSP - 2021) Assinale a alternativa correta sobre mora e inadimplemento absoluto.",
+                opt: [
+                    "(A) A mora faculta ao credor exigir a prestação acrescida de perdas e danos, juros, correção monetária e honorários, enquanto o inadimplemento absoluto abre ao credor a opção de resolver o contrato.",
+                    "(B) A mora se converte em inadimplemento absoluto quando não mais persiste a possibilidade física.",
+                    "(C) Os juros de mora por inadimplemento contratual contam-se sempre a partir da citação.",
+                    "(D) O devedor em mora responde pela impossibilidade salvo se provar força maior (mesmo não provando que o dano ocorreria de qualquer forma)."
+                ],
+                ans: 0,
+                reason: "O inadimplemento absoluto extingue a utilidade da obrigação, gerando o direito à resolução do contrato mais perdas e danos (Art. 395, parágrafo único, e Art. 475 do CC). A mora mantém a utilidade da prestação principal, acrescendo juros e correções."
+            },
+            {
+                q: "23. (FUNDEP - MPE-MG - 2021) Considerando o inadimplemento, assinale a alternativa INCORRETA:",
+                opt: [
+                    "(A) Da inexecução imputável a quem recebeu as arras, estas devem ser devolvidas mais o equivalente...",
+                    "(B) O inadimplemento da obrigação líquida no termo constitui em mora o devedor.",
+                    "(C) Quando os juros moratórios não forem convencionados, serão fixados segundo a taxa em vigor para impostos à Fazenda.",
+                    "(D) Quando se estipular a cláusula penal para o caso de mora... terá o credor o arbítrio de escolher entre a satisfação da pena ou pelo desempenho da obrigação principal, UM OU OUTRO."
+                ],
+                ans: 3,
+                reason: "A letra D está incorreta e é o gabarito. Na cláusula penal MORATÓRIA, o credor pode exigir AMBAS as coisas (a multa E o cumprimento da obrigação), conforme Art. 411 do CC, não havendo que se falar em 'um ou outro'."
+            },
+            {
+                q: "24. (VUNESP - Pref. Jundiaí - 2021) Assinale a alternativa correta sobre preferências e privilégios creditórios.",
+                opt: [
+                    "(A) Dois ou mais credores da mesma classe com privilégios com valores diferentes haverá rateio em igual valor...",
+                    "(B) Privilégio geral só compreende os bens sujeitos a expressa disposição...",
+                    "(C) Tem privilégio geral sobre a coisa o credor de custas judiciais...",
+                    "(D) O crédito pelos impostos devidos à Fazenda Pública, no ano corrente e no anterior, tem privilégio sobre o crédito pelos salários dos empregados do serviço doméstico do devedor, nos derradeiros seis meses.",
+                    "(E) Tem privilégio especial sobre o produto da colheita o trabalhador agrícola..."
+                ],
+                ans: 3,
+                reason: "Trata-se de texto literal de regras de Direito das Obrigações/Concurso de Credores. Conforme a hierarquia legal das disposições de privilégio."
+            },
+            {
+                q: "25. (FUNDEP - MPE-MG - 2022) Considere as assertivas:\nI. Na solidariedade ativa, o devedor pode opor exceções pessoais aos outros credores.\nII. Nas arras penitenciais, se quem recebeu não executar, a outra exige devolução mais equivalente E indenização suplementar.\nIII. Cláusula penal moratória permite exigir a multa E o cumprimento da obrigação.\nIV. Na assunção de dívida consentida, consideram-se extintas as garantias dadas pelo devedor primitivo (salvo assentimento deste).\nAssinale a correta:",
+                opt: [
+                    "(A) I, II e IV.",
+                    "(B) I, II e III.",
+                    "(C) III e IV.",
+                    "(D) II e III."
+                ],
+                ans: 2,
+                reason: "I é falso (Art. 273 - exceções pessoais de um não são oponíveis aos outros credores). II é falso (Arras penitenciais NÃO admitem indenização suplementar - Art. 420). III é verdadeiro (Art. 411). IV é verdadeiro (Art. 299)."
+            },
+            {
+                q: "26. (FGV - TJDFT - 2022) Supermercado celebrou exclusividade com a Geral Cola. O contrato previa cláusula penal compensatória. O Supermercado inadimpliu absolutamente a obrigação, quebrando exclusividade. O que a Geral Cola pode fazer?",
+                opt: [
+                    "(A) Poderá exigir a cláusula penal, mas não poderá cumular o pedido com eventuais perdas e danos pelo inadimplemento;",
+                    "(B) Poderá cobrar lucros cessantes cumulados com a cláusula penal...",
+                    "(C) Rede Preços deverá pagar percentual com juros remuneratórios...",
+                    "(D) Arcará com cláusula penal na exata proporção do prejuízo...",
+                    "(E) Montante estipulado só é devido se evidenciado dolo."
+                ],
+                ans: 0,
+                reason: "A cláusula penal compensatória já serve como prefixação integral das perdas e danos. O credor não pode cumular a multa com um pedido de perdas e danos adicionais, a não ser que haja previsão expressa para isso no contrato (Art. 416, parágrafo único)."
+            },
+            {
+                q: "27. (VUNESP - Pres. Prudente - 2022) Assinale a alternativa correta com relação a perdas e danos, arras e cláusula penal.",
+                opt: [
+                    "(A) Para requerer as perdas e danos, não é necessário comprovar o prejuízo... para exigir a pena convencional, é necessário alegar o prejuízo.",
+                    "(B) A parte inocente pode não pedir indenização suplementar, mesmo se provar maior prejuízo, valendo as arras como taxa máxima...",
+                    "(C) Na cláusula penal de mora, credor exige a pena ou a obrigação principal; perdas e danos não incluem juros.",
+                    "(D) Provado que juros não cobrem, juiz concede indenização suplementar; exige pena convencional mediante prova.",
+                    "(E) Pode a parte inocente exigir a execução do contrato, com as perdas e danos, valendo as arras como o mínimo da indenização; o valor da cominação imposta na cláusula penal não pode exceder o da obrigação principal."
+                ],
+                ans: 4,
+                reason: "Trata-se da junção do Art. 419 do CC (Arras confirmatórias servem de mínimo de indenização se o credor exigir execução/perdas) com o Art. 412 (A multa não pode exceder a obrigação principal)."
+            },
+            {
+                q: "28. (Consulplan - Pouso Alegre - 2023) Sobre o pagamento e a mora, assinale a afirmativa correta.",
+                opt: [
+                    "(A) O terceiro não interessado, que paga a dívida em seu próprio nome, sub-roga-se nos direitos do credor.",
+                    "(B) O devedor exonerar-se-á mediante consignação se pagar a qualquer dos pretendidos credores, com conhecimento do litígio.",
+                    "(C) Considera-se em mora o devedor que não efetuar o pagamento e o credor que não quiser recebê-lo no tempo, lugar e forma estabelecidos.",
+                    "(D) O devedor em mora responde pela impossibilidade da prestação... em qualquer circunstância (sem exceção de provar que o dano ocorreria igual)."
+                ],
+                ans: 2,
+                reason: "Exata redação do Art. 394 do CC, que caracteriza de forma bidirecional a mora solvendi (do devedor) e a mora accipiendi (do credor)."
+            },
+            {
+                q: "29. (Consulpam - Ciscopar - 2023) Assinale a alternativa que indica corretamente a limitação estabelecida pelo Código Civil para o valor da cominação na cláusula penal:",
+                opt: [
+                    "(A) Pode exceder o da obrigação principal, desde que as partes concordem.",
+                    "(B) Não pode ser inferior ao da obrigação principal.",
+                    "(C) Não pode exceder o da obrigação principal.",
+                    "(D) Deve ser sempre o dobro do valor da obrigação principal."
+                ],
+                ans: 2,
+                reason: "Princípio da proporcionalidade positivado no Art. 412 do Código Civil: 'O valor da cominação imposta na cláusula penal não pode exceder o da obrigação principal'."
+            },
+            {
+                q: "30. (Ibade - Rio Branco - 2023) Leia:\nI - Não cumprida a obrigação, responde o devedor por perdas e danos...\nII - O devedor não responde por força maior, salvo se responsabilizado.\nIII - Obrigações de ato ilícito: mora a partir da ciência judicial.\nIV - Purga-se mora pelo devedor oferecendo prestação mais importâncias.\nEstão corretas as assertivas:",
+                opt: [
+                    "(A) II e III.",
+                    "(B) III e IV.",
+                    "(C) I e III.",
+                    "(D) I e IV.",
+                    "(E) I e II."
+                ],
+                ans: 4,
+                reason: "I e II refletem os artigos 389 e 393 do CC. III está errada pois, em ato ilícito extracontratual, a mora ocorre no momento do evento danoso (Súmula 54 STJ). IV está errada porque descreve como purgar a mora, mas quem oferece o recebimento para purgar é o credor."
+            },
+            {
+                q: "31. (VUNESP - MPE-SP - 2023) Assinale a alternativa INCORRETA a respeito de cláusula penal.",
+                opt: [
+                    "(A) Pode ser estipulada em conjunto com a obrigação ou em ato posterior.",
+                    "(B) O juiz tem o dever de reduzir se cumprida em parte ou se manifestamente excessiva.",
+                    "(C) Aplica-se a ela que a invalidade da principal implica a das acessórias.",
+                    "(D) O valor da cominação não pode exceder a principal.",
+                    "(E) Não é possível estipular cláusula penal que se refira apenas à inexecução de uma das cláusulas da avença."
+                ],
+                ans: 4,
+                reason: "A alternativa E está incorreta (e é o gabarito). O Art. 409 do CC expressamente dispõe: 'A cláusula penal estipulada conjuntamente com a obrigação, ou em ato posterior, pode referir-se à inexecução completa da obrigação, à de alguma cláusula especial ou simplesmente à mora'."
+            },
+            {
+                q: "32. (VUNESP - Jaguariúna - 2023) Tendo em vista as disposições gerais que regulam o inadimplemento das obrigações, pode-se corretamente afirmar que:",
+                opt: [
+                    "(A) não cumprida a obrigação, responde por perdas e danos... se houver previsão contratual.",
+                    "(B) nas obrigações negativas o devedor é havido por inadimplente desde o dia em que executou o ato de que se devia abster.",
+                    "(C) respondem todos os bens adquiridos APÓS o início da relação jurídica...",
+                    "(D) nos contratos benéficos responde por dolo a quem o contrato aproveite...",
+                    "(E) o devedor sempre responde por caso fortuito..."
+                ],
+                ans: 1,
+                reason: "Art. 390 do CC, que prevê a fixação exata do inadimplemento (mora imediata) no momento da prática do ato proibido em obrigação de não fazer."
+            },
+            {
+                q: "33. (FGV - SEFAZ-MG - 2023) Sociedade contratada encerrou voluntariamente as atividades, descumprindo o contrato de reforma integralmente pago. Assinale a afirmativa correta.",
+                opt: [
+                    "(A) Há o inadimplemento absoluto da obrigação, devendo o devedor responder por perdas e danos, mais juros e atualização monetária...",
+                    "(B) Há caso fortuito e força maior, mesmo que a empresa pudesse evitar.",
+                    "(C) As perdas abrangem somente dano emergente, não alcançando lucros cessantes de pessoa natural.",
+                    "(D) Devedor só responde com os bens afetados ao contrato.",
+                    "(E) Por ser contrato benéfico, só responde por dolo..."
+                ],
+                ans: 0,
+                reason: "O encerramento voluntário das atividades é fato imputável (culpa lato sensu), não sendo força maior. Isso gera inadimplemento absoluto com a consequente reparação integral por perdas e danos."
+            },
+            {
+                q: "34. (IBGP - MPE-MG - 2024) Traçando um paralelo entre a cláusula penal compensatória e a moratória, assinale a CORRETA:",
+                opt: [
+                    "(A) A cláusula penal compensatória se refere a danos e a moratória a atrasos.",
+                    "(B) Ambas têm os mesmos efeitos, mas são nomeadas de forma diferente.",
+                    "(C) A cláusula penal moratória não pode ser fixada em contratos.",
+                    "(D) A cláusula penal compensatória só se aplica em contratos administrativos.",
+                    "(E) A cláusula penal moratória só é válida em contratos de adesão."
+                ],
+                ans: 0,
+                reason: "O conceito doutrinário clássico: Compensatória atua como alternativa e prefixação de perdas e danos (substitui o adimplemento). Moratória atua como punição especificamente para o caso de mora (atraso)."
+            },
+            {
+                q: "35. (Avança SP - Rio Grande da Serra - 2024) Sobre o inadimplemento das obrigações, é CORRETO:",
+                opt: [
+                    "(A) Nas obrigações de ato ilícito, mora constitui mediante interpelação.",
+                    "(B) O credor não poderá enjeitar a prestação, ainda que se torne inútil.",
+                    "(C) O devedor não responde por força maior, mesmo se houver por eles responsabilizado.",
+                    "(D) Nos onerosos, responde por culpa a quem aproveita... benéficos por culpa.",
+                    "(E) O inadimplemento da obrigação, positiva e líquida, no seu termo, constitui de pleno direito em mora o devedor. Não havendo termo, a mora se constitui mediante interpelação."
+                ],
+                ans: 4,
+                reason: "Transcrição literal do Art. 397 do CC, que institui no caput a 'Mora ex re' e no parágrafo único a 'Mora ex persona'."
+            },
+            {
+                q: "36. (FGV - ENAM - 2024) Quanto à cláusula penal, assinale a afirmativa correta.",
+                opt: [
+                    "(A) Pacto acessório, não podendo ser constituída em ato separado...",
+                    "(B) Não pode o credor invocar a cláusula penal compensatória e pretender cumulativamente perdas e danos, exceto quando pactuado que funciona como mínimo da reparação (autorizando indenização suplementar).",
+                    "(C) Fixada em valor superior ao principal, a cláusula é inválida em sua integralidade.",
+                    "(D) É facultado reduzir equitativamente quando cumprida em parte, tendo em vista o estado anímico do contratante.",
+                    "(E) Em obrigação indivisível com pluralidade de devedores, exige-se de qualquer um a integralidade da penalidade..."
+                ],
+                ans: 1,
+                reason: "É o mandamento do Parágrafo Único do Art. 416 do CC: O credor não pode exigir indenização suplementar à cláusula penal, SALVO se isso foi expressamente pactuado (funcionando a multa como mínimo)."
+            },
+            {
+                q: "37. (CESPE - DPE-AC - 2024) De acordo com o STJ e CC, a cláusula penal compensatória torna-se exigível desde a data do inadimplemento:",
+                opt: [
+                    "(A) relativo pelo devedor culposamente, vencimento não vinculado a notificação.",
+                    "(B) relativo pelo devedor dolosamente...",
+                    "(C) absoluto pelo devedor que, culposamente, deixar de cumprir a obrigação, ainda que o vencimento desta esteja vinculado à prévia notificação.",
+                    "(D) absoluto pelo devedor que, culposamente, deixar de cumprir a obrigação, desde que o vencimento desta não esteja vinculado à prévia notificação.",
+                    "(E) absoluto pelo devedor dolosamente..."
+                ],
+                ans: 2,
+                reason: "A exigibilidade da cláusula penal compensatória pressupõe o inadimplemento absoluto e culposo da prestação, que se configura independentemente da obrigatoriedade de prévia notificação resolutória na via judicial (o próprio atraso definitivo a torna exigível)."
+            },
+            {
+                q: "38. (VUNESP - MPE-RO - 2024) Assinale a alternativa que descreve corretamente a diferenciação entre a cláusula penal e as arras.",
+                opt: [
+                    "(A) Exigibilidade da cláusula dependerá de prejuízo, arras apenas prova de inadimplemento.",
+                    "(B) Cláusula beneficia devedor, arras credor.",
+                    "(C) A cláusula penal é exigível em caso de inadimplemento ou mora, e as arras são pagas por antecipação.",
+                    "(D) Devedor não poderá ofertar a pena em resgate... arras libera-se entregando objeto...",
+                    "(E) Cláusula é livre... arras reduzidas pelo juiz."
+                ],
+                ans: 2,
+                reason: "As arras (sinal) são adiantamentos (garantia ou princípio de pagamento entregues na formação do negócio). A cláusula penal é uma multa projetada para evento futuro (descumprimento ou atraso)."
+            },
+            {
+                q: "39. (IDHTEC - Itapissuma - 2024) O que ocorre se a parte que deu as arras não executar o contrato?",
+                opt: [
+                    "(A) A outra parte poderá ter o contrato por desfeito, retendo as arras.",
+                    "(B) As arras deverão ser restituídas ou computadas na prestação.",
+                    "(C) A parte poderá exigir devolução mais equivalente...",
+                    "(D) As arras deverão ser restituídas acrescidas de honorários.",
+                    "(E) A outra parte restitui mais equivalente."
+                ],
+                ans: 0,
+                reason: "Art. 418 do CC. Se a parte que deu as arras (comprador) inexecutar o contrato, a parte que recebeu (vendedor) pode considerar o contrato desfeito e reter integralmente o sinal."
+            },
+            {
+                q: "40. (FUNDATEC - Lajeado - 2025) Assinale a alternativa correta.",
+                opt: [
+                    "(A) Não vale pagamento a credor incapaz se devedor provar que reverteu em benefício...",
+                    "(B) Credor é obrigado a receber prestação diversa desde que mais valiosa.",
+                    "(C) Indice não convencionado, aplica-se o INPC.",
+                    "(D) A taxa legal corresponderá à taxa Selic, sem dedução...",
+                    "(E) Ao credor assistirá o direito de cobrar a dívida antes de vencido o prazo estipulado se cessarem ou se tornarem insuficientes as garantias do débito e o devedor se negar a reforçá-las."
+                ],
+                ans: 4,
+                reason: "Art. 333, inciso III, do CC. Essa é uma hipótese de vencimento antecipado da dívida, permitindo a cobrança imediata para proteger o credor da insolvência disfarçada."
+            },
+            {
+                q: "41. (FGV - ENAM - 2025.1) Aderbal alugou vaga para as vizinhas Brígida e Catarina (prazo indeterminado, R$200/mês). Elas pararam de pagar. Catarina sumiu. Brígida diz que só pagará a metade e não se responsabiliza pela parte de Catarina. Sobre o caso:",
+                opt: [
+                    "(A) Brígida tem razão, sem prejuízo de Aderbal poder pôr fim ao contrato em virtude do inadimplemento.",
+                    "(B) Aderbal pode sim cobrar de Brígida toda a dívida (solidariedade).",
+                    "(C) Brígida responde por Catarina pois a vaga é indivisível.",
+                    "(D) Brígida pode permanecer pagando apenas 100 reais.",
+                    "(E) Somente após três meses Aderbal pode agir."
+                ],
+                ans: 0,
+                reason: "Art. 265 do CC estabelece que 'A solidariedade não se presume; resulta da lei ou da vontade das partes'. Como o contrato não estipulou expressamente, a obrigação divisível rateia-se entre os devedores. Brígida paga sua parte, mas Aderbal pode resolver todo o contrato pelo descumprimento global."
+            },
+            {
+                q: "42. (FAFIPA - Araucária - 2025) Julgue verdadeiro ou falso:\n( ) Contratos onerosos: responde por simples culpa quem aproveite e dolo a quem não favoreça. Benéficos: por culpa.\n( ) Índice não convencionado = IPCA do IBGE.\n( ) Devedor não responde por força maior se não se responsabilizou expressamente.\n( ) Inadimplemento respondem apenas alguns bens.\nA sequência correta é:",
+                opt: [
+                    "(A) F, V, V, F.",
+                    "(B) F, F, V, F.",
+                    "(C) V, V, F, V.",
+                    "(D) V, F, F, V.",
+                    "(E) V, V, V, F."
+                ],
+                ans: 0,
+                reason: "Falso (onerosos ambas as partes respondem por culpa; benéficos quem beneficia responde por culpa, quem não beneficia por dolo - Art 392); Verdadeiro (jurisprudência atual fixou o IPCA); Verdadeiro (Art 393); Falso (Art 391: 'pelo inadimplemento respondem TODOS os bens do devedor')."
+            },
+            {
+                q: "43. (FGV - TJ-TO - 2025) Contrato de serviço, cláusula penal R$100 mil para inadimplemento total. Contratado não prestou. Contratante exigiu os 100 mil MAIS lucros cessantes de R$300 mil (sem previsão expressa no contrato).",
+                opt: [
+                    "(A) Poderá exigir ambos desde que comprove extensão.",
+                    "(B) Inadimplemento total afasta cláusula penal, cabendo só perdas e danos.",
+                    "(C) A cláusula penal estipulada para o caso de inadimplemento total da obrigação converte-se em obrigação alternativa, a benefício do credor.",
+                    "(D) A cláusula não é exigível em culpa, só em dolo.",
+                    "(E) Juiz não pode reduzir se excessivo devido à autonomia privada."
+                ],
+                ans: 2,
+                reason: "Art. 410 do CC dispõe textualmente: 'Quando se estipular a cláusula penal para o caso de total inadimplemento da obrigação, esta converter-se-á em alternativa a benefício do credor'. Ou ele exige a multa prefixada, ou as perdas e danos reais (não pode exigir ambas sem convenção - Art. 416)."
+            },
+            {
+                q: "44. (UERJ - 2025) Universidade alienou imóvel por 10 milhões. Atraso geraria 50% de multa pelo descumprimento e 1% de juros ao dia no atraso. Comprador atrasou 30 dias. É correto afirmar que:",
+                opt: [
+                    "(A) Deve arcar com ambas e a multa não pode ser reduzida.",
+                    "(B) A multa é válida pelo princípio de intervenção mínima.",
+                    "(C) A multa deve ser considerada como cláusula penal moratória, podendo ser reduzida pelo juiz caso considere abusiva por força do princípio da proporcionalidade.",
+                    "(D) Comprador paga a cláusula e a multa não reduz por ser atraso excessivo."
+                ],
+                ans: 2,
+                reason: "A redução da cláusula penal manifestamente excessiva é um dever do magistrado amparado pela função social do contrato e pela proporcionalidade (Art. 413 do CC), sendo matéria de ordem pública, inafastável pela autonomia da vontade."
+            },
+            {
+                q: "45. (FGV - Canaã dos Carajás - 2025) Ana contratou a Construcasa para reforma em 60 dias. Atrasou mais de 30 dias e Ana teve despesas extras (hospedagem, armazenamento). Ana deseja ser indenizada. Assinale a correta.",
+                opt: [
+                    "(A) Ana só teria direito se houvesse cláusula penal expressa.",
+                    "(B) Ana não tem direito porque o serviço foi prestado, não havendo inexecução.",
+                    "(C) Ana pode fixar por própria estimativa sem comprovação.",
+                    "(D) Ana exige finalização, mora não gera indenização.",
+                    "(E) Ana tem direito a ser indenizada pelos prejuízos que comprovadamente sofreu em razão do atraso, independentemente de prova de culpa da Construcasa, salvo se comprovado força maior."
+                ],
+                ans: 4,
+                reason: "Na responsabilidade contratual, a indenização abrange as perdas e danos efetivamente sofridos devido ao atraso (mora), conforme Art. 389 e 395 do CC. A relação é de consumo (Art. 14 do CDC), gerando responsabilidade objetiva (independente de prova de culpa)."
+            }
+        ];
+
+        let rightAnswers = 0;
+        let wrongAnswers = 0;
+
+        function renderQuestions() {
+            const container = document.getElementById('quiz-container');
+            
+            quizData.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                
+                const title = document.createElement('div');
+                title.className = 'question-text';
+                title.textContent = item.q;
+                card.appendChild(title);
+
+                const optsContainer = document.createElement('div');
+                optsContainer.className = 'options';
+
+                const feedbackArea = document.createElement('div');
+                feedbackArea.className = 'feedback';
+
+                item.opt.forEach((optText, optIdx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'opt-btn';
+                    btn.textContent = optText;
+                    
+                    btn.onclick = () => {
+                        // Trava as opções após clicar
+                        const allBtns = optsContainer.querySelectorAll('.opt-btn');
+                        allBtns.forEach(b => b.disabled = true);
+
+                        if(optIdx === item.ans) {
+                            btn.classList.add('correct');
+                            feedbackArea.classList.add('is-correct');
+                            feedbackArea.innerHTML = `<strong>✔️ ACERTOU!</strong><div class="explanation">${item.reason}</div>`;
+                            rightAnswers++;
+                            document.getElementById('score-correct').textContent = rightAnswers;
+                        } else {
+                            btn.classList.add('wrong');
+                            allBtns[item.ans].classList.add('correct');
+                            feedbackArea.classList.add('is-wrong');
+                            feedbackArea.innerHTML = `<strong>❌ ERROU!</strong> A alternativa destacada em verde é a correta.<div class="explanation">${item.reason}</div>`;
+                            wrongAnswers++;
+                            document.getElementById('score-wrong').textContent = wrongAnswers;
+                        }
+                        feedbackArea.style.display = 'block';
+                    };
+                    
+                    optsContainer.appendChild(btn);
+                });
+
+                card.appendChild(optsContainer);
+                card.appendChild(feedbackArea);
+                container.appendChild(card);
+            });
+        }
+
+        window.onload = () => {
+            renderQuestions();
+        };
+    </script>
+</body>
+</html>
